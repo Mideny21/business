@@ -59,7 +59,42 @@ exports.getBusiness = async (req, res) => {
     } catch (error) {
         res.status(404).json({
             status: 'fail',
-            message: err
+            message: error
+        })
+    }
+}
+
+exports.updateBusiness = async (req, res) => {
+    try {
+        const business = await Business.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true })
+
+        res.status(200).json({
+            status: 'success',
+            data: {
+                business
+            }
+        })
+    } catch (error) {
+        res.status(404).json({
+            status: 'fail',
+            message: error
+        })
+    }
+}
+
+exports.deleteBusiness = async (req, res) => {
+    try {
+        await Business.findByIdAndDelete(req.params.id);
+
+        res.status(204).json({
+            status: 'success',
+            data: null
+        });
+
+    } catch (error) {
+        res.status(404).json({
+            status: 'fail',
+            message: error
         })
     }
 }

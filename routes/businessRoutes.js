@@ -13,7 +13,7 @@ router
 router
   .route('/:id')
   .get(businessController.getBusiness)
-// .patch(businessController.updateTour)
-// .delete(businessController.deleteTour);
+  .patch(businessController.updateBusiness)
+  .delete(businessController.deleteBusiness);
 
 module.exports = router;
