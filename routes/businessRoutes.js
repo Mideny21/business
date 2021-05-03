@@ -5,6 +5,8 @@ const router = express.Router();
 
 // router.param('id', tourController.checkID);
 
+router.route('/top-5-cheap').get(businessController.aliasTopBusiness, businessController.getAllBusiness);
+
 router
   .route('/')
   .get(businessController.getAllBusiness)
