@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const slugify = require('slugify');
+const validator = require('validator');
 
 
 const businessSchema = new mongoose.Schema({
@@ -7,7 +8,10 @@ const businessSchema = new mongoose.Schema({
         type: String,
         required: [true, 'A business must have a name'],
         unique: true,
-        trim: true
+        trim: true,
+        maxlength:[40, 'A business must have less or equal than 40 characters'],
+        minlength:[10, 'A business must have more or equal than 10 characters'],
+        // validate: [validator.isAlpha, 'Business name must only contain characters']
     },
     slug: String,
     duration: {
@@ -20,11 +24,17 @@ const businessSchema = new mongoose.Schema({
     },
     difficulty: {
         type: String,
-        required: [true, 'A business must have a difficulty']
+        required: [true, 'A business must have a difficulty'],
+        enum:{
+            values: ['easy', 'medium', 'difficult'],
+            message: 'Difficulty is either: easy, medium, difficult'
+        }
     },
     ratingsAverage: {
         type: Number,
-        default: 4.5
+        default: 4.5,
+        min: [1, 'Rating must be above 1.0'],
+        max: [5, 'Rating must be below 5.0'],
     },
     ratingsQuantity: {
         type: Number,
@@ -34,7 +44,18 @@ const businessSchema = new mongoose.Schema({
         type: Number,
         required: [true, 'A business must have a price']
     },
-    priceDiscount: Number,
+    priceDiscount: {
+        type:Number,
+        validate:
+        {
+            validator: function(val){
+                // This only to current doc on new document creation
+                return val < this.price;
+            },
+            message:'Discount price ({VALUE}) should be  below regular price'
+        } 
+        
+    },
     summary: {
         type: String,
         trim: true,
@@ -93,6 +114,11 @@ businessSchema.pre(/^find/, function(next){
     this.find({ secretBusiness: { $ne: true }});
     next();
 });
+
+//AGGREGATION MIDDLEWARE
+businessSchema.pre('aggregate', function(next){
+    this.pipeline().unshift({ $match: { secretBusiness: { $ne: true } }});
+})
 
 const Business = mongoose.model('Business', businessSchema);
 
