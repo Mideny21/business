@@ -110,3 +110,103 @@ exports.deleteBusiness = async (req, res) => {
         })
     }
 }
+
+exports.getBusinessStats = async(req,res) =>{
+
+    try {
+        const stats = await Business.aggregate([
+            {
+                $match: { ratingsAverage: { $gte: 4.5 } }
+            },
+            {
+                $group:{
+                    // this id is just use to group items based on field we pass on it
+                    _id: { $toUpper: '$difficulty' },
+                    // we use 1 below to count its just a trick
+                    numBusiness: { $sum: 1  },
+                    numRatings: { $sum: '$ratingsQuantity'},
+                    avgRating: { $avg: '$ratingsAverage' },
+                    avgPrice: { $avg: '$price' },
+                    minPrice: { $min: '$price' },
+                    maxPrice: { $max: '$price' },
+
+                }
+            }, 
+            {
+                $sort: { avgPrice: 1 } // we add 1 for ascending
+            }
+            // {
+            //     $match: { _id: { $ne: 'EASY'} }
+            // }
+        ]);
+
+        res.status(200).json({
+            status: 'success',
+            data: {
+                stats
+            }
+        })
+    } catch (error) {
+        res.status(404).json({
+            status: 'fail',
+            message: error
+        })
+    }
+}
+
+// id is what we want to use to group the documents
+
+exports.getMonthlyPlan = async(req,res) =>{
+    try {
+        const year = req.params.year * 1; // * 1 its just a trick to transform it to a number and the year for this example is 2021
+        
+        const plan = await Business.aggregate([
+            {
+                $unwind: '$startDates' // unwind pull every single element in array to its own document
+            },
+            {
+                // this is just a query
+                $match:{
+                    startDates:{
+                        $gte: new Date(`${year}-01-01`),
+                        $lte: new Date(`${year}-12-31`),
+                    }
+                }
+            },
+            {
+                $group:{
+                    _id: { $month: '$startDates' }, // we are grouping them by month
+                    numBusinessStarts: { $sum: 1 }, // 1 its just a trcik to count business
+                    business: { $push: '$name' } // we push business on an array
+                }
+            },
+            {
+                $addFields:{ month: '$_id' } // we called the id on the group stage
+            },
+            {
+                $project:{
+                    _id: 0 // we remove the id on the group stage
+                }
+            },
+            {
+                $sort:{ numBusinessStarts: -1 } // in desc 
+            }, 
+            {
+                $limit: 12
+            }
+
+        ]);
+
+        res.status(200).json({
+            status: 'success',
+            data: {
+                plan
+            }
+        })
+    } catch (error) {
+        res.status(404).json({
+            status: 'fail',
+            message: error
+        })
+    }
+}
