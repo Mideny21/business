@@ -1,5 +1,8 @@
 const fs = require('fs');
 const Business = require('../models/businessModel');
+const AppError = require('../utils/appError');
+const catchAsync = require('../utils/catchAsync');
+
 
 const APIFeatures = require('./../utils/apiFeatures');
 
@@ -7,15 +10,14 @@ const APIFeatures = require('./../utils/apiFeatures');
 //   fs.readFileSync(`${__dirname}/../dev-data/data/tours-simple.json`)
 // );
 
-exports.aliasTopBusiness = async(req,res, next) =>{
+exports.aliasTopBusiness = catchAsync(async(req,res, next) =>{
     req.query.limit = '5';
     req.query.sort = '-ratingsAverage,price';
     req.query.fields = 'name,price,ratingsAverage,summary,difficulty';
     next();
-}
+});
 
-exports.getAllBusiness = async (req, res) => {
-    try {
+exports.getAllBusiness = catchAsync(async (req, res, next) => {
 
         // EXECUTE QUERY
         const features = new APIFeatures(Business.find(), req.query).filter().sorting().limitFields().paginate();
@@ -30,17 +32,14 @@ exports.getAllBusiness = async (req, res) => {
                 business
             }
         });
-    } catch (error) {
-        res.status(404).json({
-            status: 'fail',
-            message: err
-        })
-    }
-}
+ 
+});
 
 
-exports.createBusiness = async (req, res) => {
-    try {
+
+
+exports.createBusiness = catchAsync(async (req, res, next) => {
+    
         const newBusiness = await Business.create(req.body);
 
         res.status(201).json({
@@ -49,71 +48,59 @@ exports.createBusiness = async (req, res) => {
                 business: newBusiness
             }
         });
-    } catch (error) {
-        res.status(400).json({
-            status: 'fail to create',
-            message: error
-        });
-    }
-}
+});
 
 
-exports.getBusiness = async (req, res) => {
-    try {
+exports.getBusiness = catchAsync(async (req, res, next) => {
         const business = await Business.findById(req.params.id);
 
+        if(!business){
+           return next(new AppError('No business found with that ID', 404));
+        }
+
+
+
         res.status(200).json({
             status: 'success',
             data: {
                 business
             }
-        })
-    } catch (error) {
-        res.status(404).json({
-            status: 'fail',
-            message: error
-        })
-    }
-}
+        });
+});
 
-exports.updateBusiness = async (req, res) => {
-    try {
+exports.updateBusiness = catchAsync(async (req, res,next) => {
         const business = await Business.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true })
 
+        
+        if(!business){
+            return next(new AppError('No business found with that ID', 404));
+         } 
+
         res.status(200).json({
             status: 'success',
             data: {
                 business
             }
-        })
-    } catch (error) {
-        res.status(404).json({
-            status: 'fail',
-            message: error
-        })
-    }
-}
+        });
+});
 
-exports.deleteBusiness = async (req, res) => {
-    try {
-        await Business.findByIdAndDelete(req.params.id);
+exports.deleteBusiness = catchAsync(async (req, res, next) => {
+    
+      const business =  await Business.findByIdAndDelete(req.params.id);
+
+        if(!business){
+            return next(new AppError('No business found with that ID', 404));
+         }
 
         res.status(204).json({
             status: 'success',
             data: null
         });
+});
 
-    } catch (error) {
-        res.status(404).json({
-            status: 'fail',
-            message: error
-        })
-    }
-}
 
-exports.getBusinessStats = async(req,res) =>{
+exports.getBusinessStats = catchAsync(async(req,res, next) =>{
 
-    try {
         const stats = await Business.aggregate([
             {
                 $match: { ratingsAverage: { $gte: 4.5 } }
@@ -146,18 +133,13 @@ exports.getBusinessStats = async(req,res) =>{
                 stats
             }
         })
-    } catch (error) {
-        res.status(404).json({
-            status: 'fail',
-            message: error
-        })
-    }
-}
+
+});
 
 // id is what we want to use to group the documents
 
-exports.getMonthlyPlan = async(req,res) =>{
-    try {
+exports.getMonthlyPlan = catchAsync(async(req,res, next) =>{
+    
         const year = req.params.year * 1; // * 1 its just a trick to transform it to a number and the year for this example is 2021
         
         const plan = await Business.aggregate([
@@ -203,10 +185,5 @@ exports.getMonthlyPlan = async(req,res) =>{
                 plan
             }
         })
-    } catch (error) {
-        res.status(404).json({
-            status: 'fail',
-            message: error
-        })
-    }
-}
+   
+});
