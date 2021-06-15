@@ -1,5 +1,7 @@
 const express = require('express');
 const businessController = require('../controllers/businessController');
+const authController = require('./../controllers/authController');
+   
 
 const router = express.Router();
 
@@ -11,13 +13,13 @@ router.route('/monthly-plan/:year').get(businessController.getMonthlyPlan);
 
 router
   .route('/')
-  .get(businessController.getAllBusiness)
-  .post(businessController.createBusiness);
+  .get(authController.protect, businessController.getAllBusiness)
+  .post(authController.protect, businessController.createBusiness);
 
 router
   .route('/:id')
   .get(businessController.getBusiness)
   .patch(businessController.updateBusiness)
-  .delete(businessController.deleteBusiness);
+  .delete(authController.protect, authController.restrictTo('admin', 'lead-guide'), businessController.deleteBusiness);
 
 module.exports = router;
