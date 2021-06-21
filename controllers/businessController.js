@@ -52,7 +52,7 @@ exports.createBusiness = catchAsync(async (req, res, next) => {
 
 
 exports.getBusiness = catchAsync(async (req, res, next) => {
-        const business = await Business.findById(req.params.id);
+        const business = await Business.findById(req.params.id).populate('reviews');
 
         if(!business){
            return next(new AppError('No business found with that ID', 404));
