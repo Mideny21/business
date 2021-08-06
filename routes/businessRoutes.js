@@ -46,6 +46,8 @@ router
   .patch(
     authController.protect,
     authController.restrictTo('admin', 'lead-guide'),
+    businessController.uploadBusinessImages,
+    businessController.resizeBusinessImages,
     businessController.updateBusiness
   )
   .delete(
